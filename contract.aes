@@ -1,0 +1,22 @@
+contract Moopay =
+
+  record state = {
+    moopaywallet : address,
+    userwallet : address,
+    fee : int}
+
+  stateful entrypoint init(addr': address, fee': int) : state =
+    require(fee' > 0 , "The fee must be greater than zero ")
+    require(Address.is_payable(addr') , "Invalid Address")
+    { moopaywallet = ak_bZT1bnswieeQ8Z7P5VN4bYDRzPs48w3g5gze5715jwAPeQBVR , userwallet = addr', fee = fee' }
+
+  payable stateful entrypoint send() =
+    if(Call.value > 0)
+      let tokens = Call.value
+      let commission = tokens / 100 * state.fee
+      let amount = tokens - commission
+      Chain.spend(state.userwallet,amount)
+      Chain.spend(state.moopaywallet,commission)
+      String.concat("Amount: ", Int.to_str(tokens))
+    else
+      abort("Value too low")
